@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SunSeat — Sit Smart</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sun: #FFB627;
+    --sun-hot: #FF6B35;
+    --sky: #0A0E1A;
+    --sky2: #0D1B2A;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: #F0EDE8;
+    --muted: rgba(240,237,232,0.45);
+    --safe: #3DD68C;
+    --warn: #FF6B35;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--sky);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Sky background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,182,39,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 20%, rgba(255,107,53,0.08) 0%, transparent 50%),
+      linear-gradient(180deg, #0A0E1A 0%, #0D1522 100%);
+    z-index: 0;
+  }
+
+  /* Stars */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 12%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 35% 8%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 60% 5%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 6%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 25%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 22%, rgba(255,255,255,0.4) 0%, transparent 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .sun-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    position: relative;
+    animation: spin-slow 20s linear infinite;
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .sun-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #FFB627, #FF6B35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .tagline {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(12px);
+  }
+
+  .card-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--sun);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Location */
+  .location-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .loc-display {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .loc-display.loaded {
+    color: var(--text);
+  }
+
+  .loc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .loc-dot.active {
+    background: var(--safe);
+    box-shadow: 0 0 8px var(--safe);
+    animation: pulse-dot 2s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 8px var(--safe); }
+    50% { box-shadow: 0 0 16px var(--safe), 0 0 4px var(--safe); }
+  }
+
+  .btn {
+    background: linear-gradient(135deg, #FFB627, #FF6B35);
+    color: #0A0E1A;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Direction pickers */
+  .compass-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .compass-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 6px;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .compass-btn .dir-arrow {
+    display: block;
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+  }
+
+  .compass-btn:hover {
+    border-color: rgba(255,182,39,0.4);
+    color: var(--text);
+    background: rgba(255,182,39,0.06);
+  }
+
+  .compass-btn.selected {
+    background: rgba(255,182,39,0.12);
+    border-color: var(--sun);
+    color: var(--sun);
+  }
+
+  /* Seat side */
+  .seat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .seat-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 12px;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .seat-btn .seat-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
+
+  .seat-btn:hover {
+    border-color: rgba(255,182,39,0.4);
+    color: var(--text);
+  }
+
+  .seat-btn.selected {
+    background: rgba(255,182,39,0.1);
+    border-color: var(--sun);
+    color: var(--sun);
+  }
+
+  /* Result */
+  .result-card {
+    border-radius: 20px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    display: none;
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-card.safe {
+    background: linear-gradient(135deg, rgba(61,214,140,0.12), rgba(61,214,140,0.04));
+    border: 1px solid rgba(61,214,140,0.3);
+  }
+
+  .result-card.warn {
+    background: linear-gradient(135deg, rgba(255,107,53,0.12), rgba(255,107,53,0.04));
+    border: 1px solid rgba(255,107,53,0.3);
+  }
+
+  .result-emoji { font-size: 3.5rem; margin-bottom: 12px; display: block; }
+
+  .result-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .result-card.safe .result-title { color: var(--safe); }
+  .result-card.warn .result-title { color: var(--warn); }
+
+  .result-desc {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .result-details {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .detail-chip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .detail-chip span { color: var(--text); font-weight: 500; }
+
+  /* Bus visualizer */
+  .bus-viz {
+    margin: 20px 0 0;
+    display: none;
+  }
+
+  .viz-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .viz-scene {
+    position: relative;
+    width: 200px;
+    margin: 0 auto;
+    height: 100px;
+  }
+
+  /* Calculate button */
+  .calc-btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 1rem;
+    border-radius: 16px;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+
+  /* Sun position display */
+  .sun-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .meta-box {
+    flex: 1;
+    background: rgba(255,182,39,0.06);
+    border: 1px solid rgba(255,182,39,0.15);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .meta-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--sun);
+  }
+
+  .meta-key {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: var(--sun);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Compass rose */
+  .compass-rose {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px;
+    position: relative;
+    display: none;
+  }
+
+  /* Recommendation highlight */
+  .recommend-side {
+    display: inline-block;
+    background: linear-gradient(135deg, #FFB627, #FF6B35);
+    color: #0A0E1A;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    padding: 4px 16px;
+    border-radius: 20px;
+    margin: 8px 0;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-top: 32px;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="sun-icon">
+      <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="11" fill="#FFB627"/>
+        <g stroke="#FFB627" stroke-width="2.5" stroke-linecap="round">
+          <line x1="28" y1="4" x2="28" y2="10"/>
+          <line x1="28" y1="46" x2="28" y2="52"/>
+          <line x1="4" y1="28" x2="10" y2="28"/>
+          <line x1="46" y1="28" x2="52" y2="28"/>
+          <line x1="11.5" y1="11.5" x2="15.7" y2="15.7"/>
+          <line x1="40.3" y1="40.3" x2="44.5" y2="44.5"/>
+          <line x1="44.5" y1="11.5" x2="40.3" y2="15.7"/>
+          <line x1="15.7" y1="40.3" x2="11.5" y2="44.5"/>
+        </g>
+      </svg>
+    </div>
+    <h1>SunSeat</h1>
+    <p class="tagline">Sit smart. Stay cool.</p>
+  </div>
+
+  <!-- Location -->
+  <div class="card">
+    <div class="card-label">📍 Your Location</div>
+    <div class="location-row">
+      <div class="loc-display" id="locDisplay">
+        <div class="loc-dot" id="locDot"></div>
+        <span id="locText">Tap to detect location</span>
+      </div>
+      <button class="btn" id="locBtn" onclick="getLocation()">Detect</button>
+    </div>
+    <div id="sunMeta" class="sun-meta" style="display:none">
+      <div class="meta-box">
+        <div class="meta-val" id="sunAzVal">—</div>
+        <div class="meta-key">Sun Azimuth</div>
+      </div>
+      <div class="meta-box">
+        <div class="meta-val" id="sunElVal">—</div>
+        <div class="meta-key">Elevation</div>
+      </div>
+      <div class="meta-box">
+        <div class="meta-val" id="sunDirVal">—</div>
+        <div class="meta-key">Sun Direction</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bus Direction -->
+  <div class="card">
+    <div class="card-label">🚌 Bus Heading</div>
+    <div class="compass-grid" id="busGrid">
+      <button class="compass-btn" onclick="selectBus('N')" data-dir="N"><span class="dir-arrow">↑</span>N</button>
+      <button class="compass-btn" onclick="selectBus('NE')" data-dir="NE"><span class="dir-arrow">↗</span>NE</button>
+      <button class="compass-btn" onclick="selectBus('E')" data-dir="E"><span class="dir-arrow">→</span>E</button>
+      <button class="compass-btn" onclick="selectBus('SE')" data-dir="SE"><span class="dir-arrow">↘</span>SE</button>
+      <button class="compass-btn" onclick="selectBus('S')" data-dir="S"><span class="dir-arrow">↓</span>S</button>
+      <button class="compass-btn" onclick="selectBus('SW')" data-dir="SW"><span class="dir-arrow">↙</span>SW</button>
+      <button class="compass-btn" onclick="selectBus('W')" data-dir="W"><span class="dir-arrow">←</span>W</button>
+      <button class="compass-btn" onclick="selectBus('NW')" data-dir="NW"><span class="dir-arrow">↖</span>NW</button>
+    </div>
+  </div>
+
+  <!-- Seat Side -->
+  <div class="card">
+    <div class="card-label">💺 Your Seat Side</div>
+    <div class="seat-row">
+      <button class="seat-btn" onclick="selectSeat('left')" id="seatLeft">
+        <span class="seat-icon">🪟</span>
+        Left Window
+      </button>
+      <button class="seat-btn" onclick="selectSeat('right')" id="seatRight">
+        <span class="seat-icon">🪟</span>
+        Right Window
+      </button>
+    </div>
+  </div>
+
+  <button class="btn calc-btn" onclick="calculate()" id="calcBtn">
+    Check My Seat →
+  </button>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+    <span class="result-emoji" id="resultEmoji">☀️</span>
+    <div class="result-title" id="resultTitle">Loading...</div>
+    <p class="result-desc" id="resultDesc"></p>
+    <div class="result-details" id="resultDetails"></div>
+  </div>
+
+  <!-- Recommendation if bad -->
+  <div class="result-card safe" id="altCard" style="display:none">
+    <span class="result-emoji">💡</span>
+    <div class="result-title" style="color:var(--safe)">Better Option</div>
+    <p class="result-desc" id="altDesc"></p>
+  </div>
+
+  <footer>Uses real-time sun position · No data stored · Works offline after load</footer>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────
+let state = {
+  lat: null,
+  lon: null,
+  busDir: null,    // degrees
+  seatSide: null,  // 'left' or 'right'
+  sunAzimuth: null,
+  sunElevation: null
+};
+
+const DIRS = {
+  N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315
+};
+
+const DIR_NAMES = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+
+// ─── Sun Position (solar geometry) ───────────────────────────────
+function toRad(d) { return d * Math.PI / 180; }
+function toDeg(r) { return r * 180 / Math.PI; }
+
+function getSunPosition(lat, lon, date) {
+  // Based on NOAA solar position algorithm (simplified)
+  const JD = date.getTime() / 86400000 + 2440587.5;
+  const n = JD - 2451545.0;
+  const L = (280.460 + 0.9856474 * n) % 360;
+  const g = toRad((357.528 + 0.9856003 * n) % 360);
+  const lambda = toRad(L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g));
+  const epsilon = toRad(23.439 - 0.0000004 * n);
+  const sinDec = Math.sin(epsilon) * Math.sin(lambda);
+  const dec = Math.asin(sinDec);
+  const RA = Math.atan2(Math.cos(epsilon) * Math.sin(lambda), Math.cos(lambda));
+
+  // Hour angle
+  const GMST = (6.697375 + 0.0657098242 * n + (date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600)) % 24;
+  const LMST = (GMST * 15 + lon) % 360;
+  const HA = toRad(LMST - toDeg(RA));
+
+  const latRad = toRad(lat);
+  const sinAlt = Math.sin(latRad) * sinDec + Math.cos(latRad) * Math.cos(dec) * Math.cos(HA);
+  const elevation = toDeg(Math.asin(sinAlt));
+
+  const cosAz = (sinDec - Math.sin(latRad) * sinAlt) / (Math.cos(latRad) * Math.cos(Math.asin(sinAlt)));
+  let azimuth = toDeg(Math.acos(Math.max(-1, Math.min(1, cosAz))));
+  if (Math.sin(HA) > 0) azimuth = 360 - azimuth;
+
+  return { azimuth, elevation };
+}
+
+function azToDirName(az) {
+  const idx = Math.round(az / 22.5) % 16;
+  return DIR_NAMES[idx];
+}
+
+// ─── Location ────────────────────────────────────────────────────
+function getLocation() {
+  const btn = document.getElementById('locBtn');
+  const dot = document.getElementById('locDot');
+  const txt = document.getElementById('locText');
+  const display = document.getElementById('locDisplay');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  txt.textContent = 'Detecting…';
+
+  if (!navigator.geolocation) {
+    txt.textContent = 'GPS not supported — using Bengaluru';
+    state.lat = 12.9716; state.lon = 77.5946;
+    updateSunInfo();
+    btn.disabled = false; btn.textContent = 'Retry';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    state.lat = pos.coords.latitude;
+    state.lon = pos.coords.longitude;
+    dot.classList.add('active');
+    display.classList.add('loaded');
+    txt.textContent = `${state.lat.toFixed(4)}°N, ${state.lon.toFixed(4)}°E`;
+    btn.disabled = false; btn.textContent = 'Update';
+    updateSunInfo();
+  }, err => {
+    // Fallback to Bengaluru
+    state.lat = 12.9716; state.lon = 77.5946;
+    dot.classList.add('active');
+    display.classList.add('loaded');
+    txt.textContent = 'Bengaluru (fallback)';
+    btn.disabled = false; btn.textContent = 'Retry';
+    updateSunInfo();
+  }, { timeout: 8000 });
+}
+
+function updateSunInfo() {
+  const sun = getSunPosition(state.lat, state.lon, new Date());
+  state.sunAzimuth = sun.azimuth;
+  state.sunElevation = sun.elevation;
+
+  document.getElementById('sunAzVal').textContent = Math.round(sun.azimuth) + '°';
+  document.getElementById('sunElVal').textContent = Math.round(sun.elevation) + '°';
+  document.getElementById('sunDirVal').textContent = azToDirName(sun.azimuth);
+  document.getElementById('sunMeta').style.display = 'flex';
+}
+
+// ─── Direction / Seat selection ───────────────────────────────────
+function selectBus(dir) {
+  state.busDir = DIRS[dir];
+  document.querySelectorAll('#busGrid .compass-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`[data-dir="${dir}"]`).classList.add('selected');
+}
+
+function selectSeat(side) {
+  state.seatSide = side;
+  document.getElementById('seatLeft').classList.toggle('selected', side === 'left');
+  document.getElementById('seatRight').classList.toggle('selected', side === 'right');
+}
+
+// ─── Core Logic ──────────────────────────────────────────────────
+/*
+  When bus heads in direction D (degrees), and you sit on the LEFT:
+  - Your window faces direction: D - 90 (perpendicular left)
+  - Your window faces direction: D + 90 if on RIGHT
+  Sun hits you if the sun's azimuth is within ~60° of your window's facing direction
+  AND sun elevation > 5° (above horizon)
+*/
+
+function angleDiff(a, b) {
+  let d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+function checkSunHit(busDir, seatSide, sunAzimuth, sunElevation) {
+  if (sunElevation < 5) return { hit: false, reason: 'sun_low' };
+  const windowFacing = (seatSide === 'left')
+    ? (busDir - 90 + 360) % 360
+    : (busDir + 90) % 360;
+  const diff = angleDiff(windowFacing, sunAzimuth);
+  // Sun hits if it's within 70° of your window's direction
+  return { hit: diff < 70, diff, windowFacing };
+}
+
+// ─── Calculate ───────────────────────────────────────────────────
+function calculate() {
+  if (!state.lat) { alert('Please detect your location first!'); return; }
+  if (state.busDir === null) { alert('Please select the bus direction!'); return; }
+  if (!state.seatSide) { alert('Please select your seat side!'); return; }
+
+  const result = checkSunHit(state.busDir, state.seatSide, state.sunAzimuth, state.sunElevation);
+  const altSide = state.seatSide === 'left' ? 'right' : 'left';
+  const altResult = checkSunHit(state.busDir, altSide, state.sunAzimuth, state.sunElevation);
+
+  const card = document.getElementById('resultCard');
+  const altCard = document.getElementById('altCard');
+  card.style.display = 'block';
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const sunDir = azToDirName(state.sunAzimuth);
+
+  if (state.sunElevation < 5) {
+    card.className = 'result-card safe';
+    document.getElementById('resultEmoji').textContent = '🌙';
+    document.getElementById('resultTitle').textContent = 'Sun is Down!';
+    document.getElementById('resultDesc').textContent = `It's currently ${timeStr}. The sun is below the horizon (${Math.round(state.sunElevation)}°), so no worries — sit anywhere you like!`;
+    document.getElementById('resultDetails').innerHTML = '';
+    altCard.style.display = 'none';
+    return;
+  }
+
+  if (result.hit) {
+    card.className = 'result-card warn';
+    document.getElementById('resultEmoji').textContent = '🔥';
+    document.getElementById('resultTitle').textContent = 'Sun Will Hit You!';
+    document.getElementById('resultDesc').textContent = `Sitting on the ${state.seatSide} side, the sun (coming from ${sunDir}) will beam directly into your window. You'll be cooked! 🥵`;
+    document.getElementById('resultDetails').innerHTML = `
+      <div class="detail-chip">☀️ Sun: <span>${sunDir} (${Math.round(state.sunAzimuth)}°)</span></div>
+      <div class="detail-chip">🌡️ Elevation: <span>${Math.round(state.sunElevation)}°</span></div>
+      <div class="detail-chip">🪟 Window faces: <span>${azToDirName(result.windowFacing)}</span></div>
+    `;
+    altCard.style.display = 'block';
+    document.getElementById('altDesc').textContent = `Switch to the ${altSide.toUpperCase()} side — your window will face away from the sun and you'll ride in cool comfort. 😎`;
+  } else {
+    card.className = 'result-card safe';
+    document.getElementById('resultEmoji').textContent = '😎';
+    document.getElementById('resultTitle').textContent = "You're Good to Go!";
+    document.getElementById('resultDesc').textContent = `The ${state.seatSide} side is safe! The sun (from ${sunDir}) won't reach your window. Enjoy the ride!`;
+    document.getElementById('resultDetails').innerHTML = `
+      <div class="detail-chip">☀️ Sun: <span>${sunDir} (${Math.round(state.sunAzimuth)}°)</span></div>
+      <div class="detail-chip">🌡️ Elevation: <span>${Math.round(state.sunElevation)}°</span></div>
+      <div class="detail-chip">✅ Your side: <span>${state.seatSide} ✓</span></div>
+    `;
+    altCard.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
